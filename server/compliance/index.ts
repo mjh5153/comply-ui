@@ -9,8 +9,10 @@ import {FindingsExplanationProvider, FixtureExplanationProvider} from './explain
  * Seam selection. One env var each, no registry and no DI container - swapping
  * to the real Spring engine should be a config change, not a refactor.
  *
- *   COMPLY_ENGINE_MODE     fixture (default) | live
- *   COMPLY_EXPLAINER_MODE  fixture (default)
+ *   COMPLY_ENGINE_MODE  fixture (default) | live
+ *
+ * The explanation provider has only a fixture implementation today, so it is
+ * not environment-switchable. Add the env read here when a real provider lands.
  */
 
 const engineMode = (process.env.COMPLY_ENGINE_MODE || 'fixture').toLowerCase();
