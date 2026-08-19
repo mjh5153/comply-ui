@@ -1,0 +1,12 @@
+.app-bar {
+    background: #1a3a5c;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.brand-icon { margin-right: 8px; }
+.brand { font-weight: 600; letter-spacing: .3px; }
+.spacer { flex: 1 1 auto; }
+.app-bar a { color: #fff; }
+.main-content { min-height: calc(100vh - 64px); background: #f7f8fa; }
