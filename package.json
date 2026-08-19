@@ -5,12 +5,13 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve  --proxy-config ./proxy.json",
-    "server": "ts-node -P ./server/server.tsconfig.json ./server/server.ts",
+    "server": "ts-node --transpile-only -P ./server/server.tsconfig.json ./server/server.ts",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
     "start:prod": "npm run server",
     "test:bff": "vitest run --config vitest.bff.config.mts",
+    "typecheck:bff": "tsc -p server/server.tsconfig.json --noEmit",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed"
   },
