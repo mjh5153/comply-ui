@@ -46,7 +46,8 @@
 /***************************************************************************************************
  * Zone JS is required by Angular itself.
  */
-import 'zone.js';  // Included with Angular CLI.
+// zone.js removed: the app runs zoneless on Angular 22.
+// Change detection is driven by signals and template event bindings.
 
 
 

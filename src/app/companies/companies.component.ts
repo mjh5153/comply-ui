@@ -1,7 +1,7 @@
 
 
-import {Component, OnInit, inject, signal} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {Component, OnInit, inject, signal, ChangeDetectionStrategy} from '@angular/core';
+
 import {RouterLink} from '@angular/router';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatCardModule} from '@angular/material/card';
@@ -23,59 +23,73 @@ import {Company} from '../model/company';
     selector: 'companies',
     standalone: true,
     imports: [
-        CommonModule, RouterLink, ReactiveFormsModule, MatCardModule,
-        MatButtonModule, MatInputModule, MatIconModule, MatProgressBarModule
-    ],
+    RouterLink,
+    ReactiveFormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatInputModule,
+    MatIconModule,
+    MatProgressBarModule
+],
     template: `
         <div class="page">
-
-            <header class="page-head">
-                <div>
-                    <h1>Companies</h1>
-                    <p class="sub">Records served by the Spring COMPLY API through the BFF.</p>
-                </div>
-                <span class="badge badge-live">
-                    <mat-icon inline>verified</mat-icon> COMPLY API
-                </span>
-            </header>
-
-            <mat-card class="create-card">
-                <h2>Add a company</h2>
-                <form [formGroup]="form" (ngSubmit)="create()" class="create-form">
-                    <mat-form-field appearance="outline">
-                        <mat-label>Name</mat-label>
-                        <input matInput formControlName="name" placeholder="Acme Corp">
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
-                        <mat-label>Email</mat-label>
-                        <input matInput formControlName="email" placeholder="ops@acme.test">
-                    </mat-form-field>
-                    <button mat-flat-button color="primary" type="submit"
-                            [disabled]="form.invalid || saving()">
-                        {{ saving() ? 'Saving…' : 'Create' }}
-                    </button>
-                </form>
-                <p class="error" *ngIf="error()">{{ error() }}</p>
-            </mat-card>
-
-            <mat-progress-bar mode="indeterminate" *ngIf="loading()"></mat-progress-bar>
-
-            <div class="grid">
-                <mat-card class="company-card" *ngFor="let c of companies()">
-                    <div class="company-id">#{{ c.id }}</div>
-                    <h3>{{ c.name }}</h3>
-                    <p class="email">{{ c.email }}</p>
-                    <a mat-stroked-button color="primary" [routerLink]="['/companies', c.id]">
-                        Investigate compliance
-                    </a>
-                </mat-card>
+        
+          <header class="page-head">
+            <div>
+              <h1>Companies</h1>
+              <p class="sub">Records served by the Spring COMPLY API through the BFF.</p>
             </div>
-
-            <p class="empty" *ngIf="!loading() && companies().length === 0">
-                No companies yet. Create one above.
+            <span class="badge badge-live">
+              <mat-icon inline>verified</mat-icon> COMPLY API
+            </span>
+          </header>
+        
+          <mat-card class="create-card">
+            <h2>Add a company</h2>
+            <form [formGroup]="form" (ngSubmit)="create()" class="create-form">
+              <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput formControlName="name" placeholder="Acme Corp">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="email" placeholder="ops@acme.test">
+              </mat-form-field>
+              <button mat-flat-button color="primary" type="submit"
+                [disabled]="form.invalid || saving()">
+                {{ saving() ? 'Saving…' : 'Create' }}
+              </button>
+            </form>
+            @if (error()) {
+              <p class="error">{{ error() }}</p>
+            }
+          </mat-card>
+        
+          @if (loading()) {
+            <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          }
+        
+          <div class="grid">
+            @for (c of companies(); track c.id) {
+              <mat-card class="company-card">
+                <div class="company-id">#{{ c.id }}</div>
+                <h3>{{ c.name }}</h3>
+                <p class="email">{{ c.email }}</p>
+                <a mat-stroked-button color="primary" [routerLink]="['/companies', c.id]">
+                  Investigate compliance
+                </a>
+              </mat-card>
+            }
+          </div>
+        
+          @if (!loading() && companies().length === 0) {
+            <p class="empty">
+              No companies yet. Create one above.
             </p>
+          }
         </div>
-    `,
+        `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
         .page { max-width: 1100px; margin: 0 auto; padding: 24px; }
         .page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }

@@ -9,7 +9,10 @@
  * origins. Nothing here may hardcode a localhost URL as a production default.
  */
 
-function readInt(value: string, fallback: number): number {
+function readInt(value: string | undefined, fallback: number): number {
+    if (value === undefined) {
+        return fallback;
+    }
     const parsed = parseInt(value, 10);
     return isNaN(parsed) ? fallback : parsed;
 }
@@ -18,7 +21,7 @@ function stripTrailingSlashes(url: string): string {
     return url.replace(/\/+$/, '');
 }
 
-function readOrigins(value: string): string[] {
+function readOrigins(value: string | undefined): string[] {
     if (!value) {
         return [];
     }

@@ -21,7 +21,7 @@ import {forward} from './comply-api.client';
  * with a 500-level parse failure. Validating here turns that into a clear
  * 400 and saves a pointless network round trip.
  */
-function readCompanyId(req: Request, res: Response): string {
+function readCompanyId(req: Request, res: Response): string | null {
 
     const id = req.params['id'];
 
