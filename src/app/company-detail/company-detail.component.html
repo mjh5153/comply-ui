@@ -1,257 +1,293 @@
 <div class="page">
 
-    <a routerLink="/companies" class="back">
-        <mat-icon inline>arrow_back</mat-icon> All companies
-    </a>
+  <a routerLink="/companies" class="back">
+    <mat-icon inline>arrow_back</mat-icon> All companies
+  </a>
 
-    <mat-progress-bar mode="indeterminate" *ngIf="loading() || evaluating()"></mat-progress-bar>
+  @if (loading() || evaluating()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
 
-    <p class="error" *ngIf="error()">{{ error() }}</p>
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
 
-    <!-- Company: authoritative, from Spring -->
-    <header class="page-head" *ngIf="company() as c">
-        <div>
-            <h1>{{ c.name }}</h1>
-            <p class="sub">{{ c.email }} &middot; company #{{ c.id }}</p>
-        </div>
-        <span class="badge badge-live">
-            <mat-icon inline>verified</mat-icon> COMPLY API record
-        </span>
+  <!-- Company: authoritative, from Spring -->
+  @if (company(); as c) {
+    <header class="page-head">
+      <div>
+        <h1>{{ c.name }}</h1>
+        <p class="sub">{{ c.email }} &middot; company #{{ c.id }}</p>
+      </div>
+      <span class="badge badge-live">
+        <mat-icon inline>verified</mat-icon> COMPLY API record
+      </span>
     </header>
+  }
 
-    <!-- Provenance notice. Reads mode off the payload rather than assuming it. -->
-    <div class="provenance-note" *ngIf="engineMode() === 'fixture'">
-        <mat-icon inline>science</mat-icon>
-        <div>
-            <strong>Findings below are generated locally by a fixture engine.</strong>
-            The COMPLY API exposes no compliance endpoints, so these are
-            <em>not</em> COMPLY engine output. They are deterministic and reproducible,
-            but they are not authoritative compliance results.
-        </div>
+  <!-- Provenance notice. Reads mode off the payload rather than assuming it. -->
+  @if (engineMode() === 'fixture') {
+    <div class="provenance-note">
+      <mat-icon inline>science</mat-icon>
+      <div>
+        <strong>Findings below are generated locally by a fixture engine.</strong>
+        The COMPLY API exposes no compliance endpoints, so these are
+        <em>not</em> COMPLY engine output. They are deterministic and reproducible,
+        but they are not authoritative compliance results.
+      </div>
     </div>
+  }
 
-    <!-- Processing profile: the evaluated subject -->
-    <mat-card class="panel" *ngIf="profile() as p">
-        <div class="panel-head">
-            <h2>Processing profile</h2>
-            <span class="badge badge-input">evaluated input</span>
+  <!-- Processing profile: the evaluated subject -->
+  @if (profile(); as p) {
+    <mat-card class="panel">
+      <div class="panel-head">
+        <h2>Processing profile</h2>
+        <span class="badge badge-input">evaluated input</span>
+      </div>
+      <div class="profile-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Retention (days)</mat-label>
+          <input matInput type="number" [(ngModel)]="p.retentionDays">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Data residency</mat-label>
+          <mat-select [(ngModel)]="p.dataResidency">
+            @for (r of residencies; track r) {
+              <mat-option [value]="r">{{ r }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Processing purpose</mat-label>
+          <mat-select [(ngModel)]="p.processingPurpose">
+            @for (x of purposes; track x) {
+              <mat-option [value]="x">{{ x }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Lawful basis</mat-label>
+          <mat-select [(ngModel)]="p.lawfulBasis">
+            @for (b of bases; track b) {
+              <mat-option [value]="b">{{ b }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Transfer mechanism</mat-label>
+          <mat-select [(ngModel)]="p.transferMechanism">
+            @for (m of mechanisms; track m) {
+              <mat-option [value]="m">{{ m }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Subprocessors (comma separated)</mat-label>
+          <input matInput [ngModel]="p.subprocessors.join(', ')"
+            (ngModelChange)="setSubprocessors(p, $event)">
+        </mat-form-field>
+      </div>
+      <h3 class="pii-head">Personal data held</h3>
+      @for (e of p.piiElements; track e.category) {
+        <div class="pii-row">
+          <span class="pii-cat">{{ e.category }}</span>
+          <mat-form-field appearance="outline" class="pii-select">
+            <mat-select [(ngModel)]="e.treatment">
+              @for (t of treatments; track t) {
+                <mat-option [value]="t">{{ t }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
         </div>
-
-        <div class="profile-grid">
-            <mat-form-field appearance="outline">
-                <mat-label>Retention (days)</mat-label>
-                <input matInput type="number" [(ngModel)]="p.retentionDays">
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-                <mat-label>Data residency</mat-label>
-                <mat-select [(ngModel)]="p.dataResidency">
-                    <mat-option *ngFor="let r of residencies" [value]="r">{{ r }}</mat-option>
-                </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-                <mat-label>Processing purpose</mat-label>
-                <mat-select [(ngModel)]="p.processingPurpose">
-                    <mat-option *ngFor="let x of purposes" [value]="x">{{ x }}</mat-option>
-                </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-                <mat-label>Lawful basis</mat-label>
-                <mat-select [(ngModel)]="p.lawfulBasis">
-                    <mat-option *ngFor="let b of bases" [value]="b">{{ b }}</mat-option>
-                </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-                <mat-label>Transfer mechanism</mat-label>
-                <mat-select [(ngModel)]="p.transferMechanism">
-                    <mat-option *ngFor="let m of mechanisms" [value]="m">{{ m }}</mat-option>
-                </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-                <mat-label>Subprocessors (comma separated)</mat-label>
-                <input matInput [ngModel]="p.subprocessors.join(', ')"
-                       (ngModelChange)="setSubprocessors(p, $event)">
-            </mat-form-field>
-        </div>
-
-        <h3 class="pii-head">Personal data held</h3>
-        <div class="pii-row" *ngFor="let e of p.piiElements">
-            <span class="pii-cat">{{ e.category }}</span>
-            <mat-form-field appearance="outline" class="pii-select">
-                <mat-select [(ngModel)]="e.treatment">
-                    <mat-option *ngFor="let t of treatments" [value]="t">{{ t }}</mat-option>
-                </mat-select>
-            </mat-form-field>
-        </div>
-
-        <div class="panel-actions">
-            <button mat-flat-button color="primary" (click)="saveProfile()" [disabled]="evaluating()">
-                Save &amp; re-evaluate
-            </button>
-            <button mat-stroked-button (click)="evaluate()" [disabled]="evaluating()">
-                Re-run engine
-            </button>
-        </div>
+      }
+      <div class="panel-actions">
+        <button mat-flat-button color="primary" (click)="saveProfile()" [disabled]="evaluating()">
+          Save &amp; re-evaluate
+        </button>
+        <button mat-stroked-button (click)="evaluate()" [disabled]="evaluating()">
+          Re-run engine
+        </button>
+      </div>
     </mat-card>
+  }
 
-    <!-- Findings: engine output -->
-    <mat-card class="panel" *ngIf="result() as r">
-        <div class="panel-head">
-            <h2>Findings <span class="count">{{ r.findings.length }}</span></h2>
-            <span class="badge" [class.badge-fixture]="r.provenance.mode === 'fixture'"
-                  [class.badge-live]="r.provenance.mode === 'live'">
-                <mat-icon inline>{{ r.provenance.mode === 'fixture' ? 'science' : 'verified' }}</mat-icon>
-                ENGINE &middot; {{ r.provenance.mode | uppercase }}
-            </span>
-        </div>
-
-        <p class="rule-meta">
-            rule set {{ r.provenance.ruleSetVersion }} &middot; engine {{ r.provenance.engineVersion }}
+  <!-- Findings: engine output -->
+  @if (result(); as r) {
+    <mat-card class="panel">
+      <div class="panel-head">
+        <h2>Findings <span class="count">{{ r.findings.length }}</span></h2>
+        <span class="badge" [class.badge-fixture]="r.provenance.mode === 'fixture'"
+          [class.badge-live]="r.provenance.mode === 'live'">
+          <mat-icon inline>{{ r.provenance.mode === 'fixture' ? 'science' : 'verified' }}</mat-icon>
+          ENGINE &middot; {{ r.provenance.mode | uppercase }}
+        </span>
+      </div>
+      <p class="rule-meta">
+        rule set {{ r.provenance.ruleSetVersion }} &middot; engine {{ r.provenance.engineVersion }}
+      </p>
+      @if (r.findings.length === 0) {
+        <p class="empty">
+          No rules fired against this profile.
         </p>
-
-        <p class="empty" *ngIf="r.findings.length === 0">
-            No rules fired against this profile.
-        </p>
-
-        <div class="finding" *ngFor="let f of r.findings; trackBy: trackByRule"
-             [attr.data-sev]="f.severity">
-
-            <div class="finding-head">
-                <span class="sev sev-{{ f.severity | lowercase }}">{{ f.severity }}</span>
-                <span class="applic applic-{{ f.applicability | lowercase }}">{{ f.applicability }}</span>
-                <span class="rule-id">{{ f.ruleId }}</span>
-            </div>
-
-            <h3>{{ f.title }}</h3>
-            <p class="rationale">{{ f.rationale }}</p>
-
-            <!-- Law mappings -->
-            <div class="laws">
-                <span class="law" *ngFor="let m of f.lawMappings">
-                    <mat-icon inline>gavel</mat-icon>
-                    {{ m.framework }} {{ m.citation }} — {{ m.title }}
+      }
+      @for (f of r.findings; track f.ruleId) {
+        <div class="finding"
+          [attr.data-sev]="f.severity">
+          <div class="finding-head">
+            <span class="sev sev-{{ f.severity | lowercase }}">{{ f.severity }}</span>
+            <span class="applic applic-{{ f.applicability | lowercase }}">{{ f.applicability }}</span>
+            <span class="rule-id">{{ f.ruleId }}</span>
+          </div>
+          <h3>{{ f.title }}</h3>
+          <p class="rationale">{{ f.rationale }}</p>
+          <!-- Law mappings -->
+          <div class="laws">
+            @for (m of f.lawMappings; track m.citation) {
+              <span class="law">
+                <mat-icon inline>gavel</mat-icon>
+                {{ m.framework }} {{ m.citation }} — {{ m.title }}
+              </span>
+            }
+          </div>
+          <mat-expansion-panel class="detail-panel">
+            <mat-expansion-panel-header>
+              <mat-panel-title>Engine detail</mat-panel-title>
+            </mat-expansion-panel-header>
+            <h4>Triggering facts</h4>
+            <table class="facts">
+              @for (t of f.triggeringFacts; track t.path) {
+                <tr>
+                  <td class="path">{{ t.path }}</td>
+                  <td class="op">{{ t.operator }}</td>
+                  <td class="val">{{ t.value }}</td>
+                  @if (t.threshold !== undefined) {
+                    <td class="thr">threshold {{ t.threshold }}</td>
+                  }
+                </tr>
+              }
+            </table>
+            @if (f.missingInformation.length) {
+              <h4>Missing information</h4>
+              <ul>@for (m of f.missingInformation; track $index) {
+                <li>{{ m }}</li>
+              }</ul>
+            }
+            @if (f.assumptions.length) {
+              <h4>Assumptions</h4>
+              <ul>@for (a of f.assumptions; track $index) {
+                <li>{{ a }}</li>
+              }</ul>
+            }
+            <h4>Recommended controls</h4>
+            <ul>@for (c of f.recommendedControls; track $index) {
+              <li>{{ c }}</li>
+            }</ul>
+          </mat-expansion-panel>
+          <!-- Quick actions -> AI seam -->
+          <div class="actions">
+            @for (q of questions; track q.key) {
+              <button mat-stroked-button
+              (click)="ask(f, q.key)">{{ q.label }}</button>
+            }
+          </div>
+          <!-- AI explanation, visually separated from engine output -->
+          @if (explanationFor(f.ruleId); as e) {
+            <div class="explanation">
+              <div class="explanation-head">
+                <span class="badge badge-ai">
+                  <mat-icon inline>smart_toy</mat-icon>
+                  AI &middot; {{ e.provenance.mode | uppercase }} &middot; NOT AUTHORITATIVE
                 </span>
+                <button mat-icon-button (click)="dismissExplanation(f.ruleId)">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              <p>{{ e.text }}</p>
+              <p class="grounded">Grounded in: {{ e.groundedIn.join(', ') }}</p>
             </div>
-
-            <mat-expansion-panel class="detail-panel">
-                <mat-expansion-panel-header>
-                    <mat-panel-title>Engine detail</mat-panel-title>
-                </mat-expansion-panel-header>
-
-                <h4>Triggering facts</h4>
-                <table class="facts">
-                    <tr *ngFor="let t of f.triggeringFacts">
-                        <td class="path">{{ t.path }}</td>
-                        <td class="op">{{ t.operator }}</td>
-                        <td class="val">{{ t.value }}</td>
-                        <td class="thr" *ngIf="t.threshold !== undefined">threshold {{ t.threshold }}</td>
-                    </tr>
-                </table>
-
-                <ng-container *ngIf="f.missingInformation.length">
-                    <h4>Missing information</h4>
-                    <ul><li *ngFor="let m of f.missingInformation">{{ m }}</li></ul>
-                </ng-container>
-
-                <ng-container *ngIf="f.assumptions.length">
-                    <h4>Assumptions</h4>
-                    <ul><li *ngFor="let a of f.assumptions">{{ a }}</li></ul>
-                </ng-container>
-
-                <h4>Recommended controls</h4>
-                <ul><li *ngFor="let c of f.recommendedControls">{{ c }}</li></ul>
-            </mat-expansion-panel>
-
-            <!-- Quick actions -> AI seam -->
-            <div class="actions">
-                <button mat-stroked-button *ngFor="let q of questions"
-                        (click)="ask(f, q.key)">{{ q.label }}</button>
-            </div>
-
-            <!-- AI explanation, visually separated from engine output -->
-            <div class="explanation" *ngIf="explanationFor(f.ruleId) as e">
-                <div class="explanation-head">
-                    <span class="badge badge-ai">
-                        <mat-icon inline>smart_toy</mat-icon>
-                        AI &middot; {{ e.provenance.mode | uppercase }} &middot; NOT AUTHORITATIVE
-                    </span>
-                    <button mat-icon-button (click)="dismissExplanation(f.ruleId)">
-                        <mat-icon>close</mat-icon>
-                    </button>
-                </div>
-                <p>{{ e.text }}</p>
-                <p class="grounded">Grounded in: {{ e.groundedIn.join(', ') }}</p>
-            </div>
+          }
         </div>
+      }
     </mat-card>
+  }
 
-    <!-- Scenario exploration -->
-    <mat-card class="panel" *ngIf="profile()">
-        <div class="panel-head">
-            <h2>What-if scenario</h2>
-            <span class="badge badge-input">re-evaluated by the engine</span>
-        </div>
-        <p class="sub">
-            The engine re-runs against the modified profile and the difference is
-            computed. No explanation layer is involved in producing this result.
-        </p>
-
-        <div class="scenario-grid">
-            <mat-form-field appearance="outline">
-                <mat-label>Retention becomes (days)</mat-label>
-                <input matInput type="number" [(ngModel)]="scenarioRetention" placeholder="30">
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-                <mat-label>Residency becomes</mat-label>
-                <mat-select [(ngModel)]="scenarioResidency">
-                    <mat-option value="">(unchanged)</mat-option>
-                    <mat-option *ngFor="let r of residencies" [value]="r">{{ r }}</mat-option>
-                </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-                <mat-label>Email treatment becomes</mat-label>
-                <mat-select [(ngModel)]="scenarioEmailTreatment">
-                    <mat-option value="">(unchanged)</mat-option>
-                    <mat-option *ngFor="let t of treatments" [value]="t">{{ t }}</mat-option>
-                </mat-select>
-            </mat-form-field>
-        </div>
-
-        <div class="panel-actions">
-            <button mat-flat-button color="accent" (click)="runScenario()" [disabled]="evaluating()">
-                Run scenario
-            </button>
-            <button mat-stroked-button (click)="clearScenario()" *ngIf="scenario()">Clear</button>
-        </div>
-
-        <div class="scenario-result" *ngIf="scenario() as s">
-            <h3>
-                {{ s.baseline.findings.length }} findings &rarr; {{ s.modified.findings.length }} findings
-            </h3>
-
-            <p class="applied">
-                Applied:
-                <span class="mod" *ngFor="let m of s.modifications">
-                    {{ m.path }}: {{ m.from }} &rarr; {{ m.to }}
+  <!-- Scenario exploration -->
+  @if (profile()) {
+    <mat-card class="panel">
+      <div class="panel-head">
+        <h2>What-if scenario</h2>
+        <span class="badge badge-input">re-evaluated by the engine</span>
+      </div>
+      <p class="sub">
+        The engine re-runs against the modified profile and the difference is
+        computed. No explanation layer is involved in producing this result.
+      </p>
+      <div class="scenario-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Retention becomes (days)</mat-label>
+          <input matInput type="number" [(ngModel)]="scenarioRetention" placeholder="30">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Residency becomes</mat-label>
+          <mat-select [(ngModel)]="scenarioResidency">
+            <mat-option value="">(unchanged)</mat-option>
+            @for (r of residencies; track r) {
+              <mat-option [value]="r">{{ r }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Email treatment becomes</mat-label>
+          <mat-select [(ngModel)]="scenarioEmailTreatment">
+            <mat-option value="">(unchanged)</mat-option>
+            @for (t of treatments; track t) {
+              <mat-option [value]="t">{{ t }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="panel-actions">
+        <button mat-flat-button color="accent" (click)="runScenario()" [disabled]="evaluating()">
+          Run scenario
+        </button>
+        @if (scenario()) {
+          <button mat-stroked-button (click)="clearScenario()">Clear</button>
+        }
+      </div>
+      @if (scenario(); as s) {
+        <div class="scenario-result">
+          <h3>
+            {{ s.baseline.findings.length }} findings &rarr; {{ s.modified.findings.length }} findings
+          </h3>
+          <p class="applied">
+            Applied:
+            @for (m of s.modifications; track m.path) {
+              <span class="mod">
+                {{ m.path }}: {{ m.from }} &rarr; {{ m.to }}
+              </span>
+            }
+          </p>
+          @for (d of s.delta; track d.ruleId) {
+            <div class="delta delta-{{ d.kind | lowercase }}">
+              <span class="kind">{{ d.kind }}</span>
+              <span class="delta-rule">{{ d.ruleId }}</span>
+              <span class="delta-title">{{ d.title }}</span>
+              @if (d.kind === 'SEVERITY_CHANGED') {
+                <span class="delta-change">
+                  {{ d.beforeSeverity }} &rarr; {{ d.afterSeverity }}
                 </span>
-            </p>
-
-            <div class="delta delta-{{ d.kind | lowercase }}" *ngFor="let d of s.delta">
-                <span class="kind">{{ d.kind }}</span>
-                <span class="delta-rule">{{ d.ruleId }}</span>
-                <span class="delta-title">{{ d.title }}</span>
-                <span class="delta-change" *ngIf="d.kind === 'SEVERITY_CHANGED'">
-                    {{ d.beforeSeverity }} &rarr; {{ d.afterSeverity }}
+              }
+              @if (d.kind === 'APPLICABILITY_CHANGED') {
+                <span class="delta-change">
+                  {{ d.beforeApplicability }} &rarr; {{ d.afterApplicability }}
                 </span>
-                <span class="delta-change" *ngIf="d.kind === 'APPLICABILITY_CHANGED'">
-                    {{ d.beforeApplicability }} &rarr; {{ d.afterApplicability }}
-                </span>
+              }
             </div>
+          }
         </div>
+      }
     </mat-card>
+  }
 
 </div>

@@ -1,8 +1,8 @@
 
 
-import * as express from 'express';
-import * as path from 'path';
-import * as fs from 'fs';
+import express from 'express';
+import path from 'path';
+import fs from 'fs';
 import {Application, Request, Response} from "express";
 import {config, describeConfig} from './config';
 import {probeUpstream} from './comply-api.client';
@@ -46,7 +46,7 @@ const cors = require('cors');
  * the check entirely and should only be used for throwaway environments.
  */
 app.use(cors({
-    origin: function (origin, callback) {
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
 
         // Same-origin requests and server-to-server calls send no Origin header.
         if (!origin) {
@@ -179,7 +179,7 @@ app.use('/api', (req: Request, res: Response) => {
 // UI instead.
 // ---------------------------------------------------------------------------
 
-function findBuildOutput(): string {
+function findBuildOutput(): string | null {
 
     const candidates = [
         path.join(__dirname, '..', 'dist', 'browser'),

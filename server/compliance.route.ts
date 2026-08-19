@@ -19,7 +19,7 @@ import {ProcessingProfile, Finding} from './compliance/types';
  * exists in Spring before evaluating anything for it.
  */
 
-function readId(req: Request, res: Response): number {
+function readId(req: Request, res: Response): number | null {
     const raw = req.params['id'];
     if (!/^\d+$/.test(raw)) {
         res.status(400).json({
@@ -109,7 +109,7 @@ export async function evaluateCompany(req: Request, res: Response) {
 
     try {
         res.json(await engine.evaluate(profile));
-    } catch (error) {
+    } catch (error: any) {
         res.status(503).json({
             status: 503, error: 'Service Unavailable',
             message: (error && error.message) || 'Compliance engine unavailable',
@@ -172,7 +172,7 @@ export async function evaluateScenario(req: Request, res: Response) {
             delta: diffResults(baseline, modified),
             provenance: modified.provenance
         });
-    } catch (error) {
+    } catch (error: any) {
         res.status(503).json({
             status: 503, error: 'Service Unavailable',
             message: (error && error.message) || 'Compliance engine unavailable',
@@ -202,9 +202,8 @@ export async function explainFinding(req: Request, res: Response) {
 
     const result = await engine.evaluate(getProfile(Number(body.companyId)));
 
-    let finding: Finding = null;
-    result.findings.forEach(function (f) {
-        if (f.ruleId === body.ruleId) { finding = f; }
+    const finding = result.findings.find(function (f) {
+        return f.ruleId === body.ruleId;
     });
 
     if (!finding) {

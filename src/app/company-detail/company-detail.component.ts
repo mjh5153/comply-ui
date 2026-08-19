@@ -1,6 +1,6 @@
 
 
-import {Component, OnInit, inject, signal, computed} from '@angular/core';
+import {Component, OnInit, inject, signal, computed, ChangeDetectionStrategy} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {FormsModule} from '@angular/forms';
@@ -41,6 +41,7 @@ import {
         MatChipsModule, MatExpansionModule
     ],
     templateUrl: './company-detail.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./company-detail.component.scss']
 })
 export class CompanyDetailComponent implements OnInit {
@@ -175,8 +176,6 @@ export class CompanyDetailComponent implements OnInit {
     explanationFor(ruleId: string): FindingsExplanation | null {
         return this.explanations()[ruleId] || null;
     }
-
-    trackByRule = (_: number, f: Finding) => f.ruleId;
 
     private describe(err: any): string {
         if (err.status === 0) { return 'Cannot reach the BFF on port 9000. Is `npm run server` running?'; }

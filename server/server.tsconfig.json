@@ -1,6 +1,13 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "lib": ["es2017"]
+    "module": "node16",
+    "moduleResolution": "node16",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
   }
 }
