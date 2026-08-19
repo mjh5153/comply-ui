@@ -1,0 +1,51 @@
+# Render blueprint for the Comply UI web service.
+#
+# Topology:
+#
+#   browser
+#      |
+#      v
+#   comply-ui   (this repo, Render "Web Service", Node)
+#      |          serves the built Angular app AND exposes /api
+#      v
+#   comply-api  (Spring Boot, separate repo, Render "Web Service")
+#
+# The browser only ever talks to comply-ui, so the app stays on a single
+# origin and no CORS configuration is required. Only the BFF talks to the
+# Spring service, over COMPLY_API_BASE_URL.
+
+services:
+  - type: web
+    name: comply-ui
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Set to the Spring Boot service's URL. If comply-api is deployed in
+      # this same Render account you can wire it automatically instead:
+      #
+      #   - key: COMPLY_API_BASE_URL
+      #     fromService:
+      #       name: comply-api
+      #       type: web
+      #       property: hostport
+      #
+      - key: COMPLY_API_BASE_URL
+        sync: false
+
+      - key: COMPLY_API_TIMEOUT_MS
+        value: "15000"
+
+      # Only needed if the UI is ever split onto its own static origin.
+      # Left unset, the BFF serves the UI and requests are same-origin.
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+      # Recommended before exposing the BFF publicly - see .env.example.
+      - key: COMPLY_EXTERNAL_API_ALLOWLIST
+        sync: false
