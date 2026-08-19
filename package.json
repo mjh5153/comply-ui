@@ -10,7 +10,9 @@
     "test": "ng test",
     "lint": "ng lint",
     "start:prod": "npm run server",
-    "test:bff": "vitest run --config vitest.bff.config.mts"
+    "test:bff": "vitest run --config vitest.bff.config.mts",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed"
   },
   "private": true,
   "dependencies": {
@@ -39,6 +41,7 @@
     "@angular/cli": "^22.1.4",
     "@angular/compiler-cli": "22.1.2",
     "@angular/language-service": "22.1.2",
+    "@playwright/test": "^1.62.1",
     "@types/express": "^4.0.39",
     "@types/node": "^22.10.0",
     "istanbul-lib-instrument": "^6.0.3",
