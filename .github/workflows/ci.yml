@@ -74,14 +74,11 @@ jobs:
       - name: Start the COMPLY API on :8080
         run: |
           nohup java -jar comply-api/target/*.jar > "$RUNNER_TEMP/spring.log" 2>&1 &
-          echo "waiting for Spring on :8080"
-          for i in $(seq 1 60); do
-            if curl -sf --max-time 2 http://localhost:8080/companies > /dev/null; then
-              echo "Spring is up after ${i}s"; exit 0
-            fi
-            sleep 1
-          done
-          echo "Spring did not start within 60s"; cat "$RUNNER_TEMP/spring.log"; exit 1
+          # 127.0.0.1 rather than localhost: Tomcat binds IPv4, and localhost can
+          # resolve to ::1 first on the runner. Any HTTP response proves the
+          # service is listening, so the status code is reported, not assumed.
+          ./.github/scripts/wait-for-http.sh http://127.0.0.1:8080/companies 90 \
+            || { echo "--- spring.log ---"; cat "$RUNNER_TEMP/spring.log"; exit 1; }
 
       - uses: actions/setup-node@v4
         with:
@@ -97,14 +94,15 @@ jobs:
       - name: Start the BFF on :9000
         run: |
           nohup npm run server > "$RUNNER_TEMP/bff.log" 2>&1 &
-          echo "waiting for the BFF on :9000"
-          for i in $(seq 1 60); do
-            if curl -sf --max-time 2 http://localhost:9000/api/health > /dev/null; then
-              echo "BFF is up after ${i}s"; exit 0
-            fi
-            sleep 1
-          done
-          echo "BFF did not start within 60s"; cat "$RUNNER_TEMP/bff.log"; exit 1
+          # /api/health answers 503 when the upstream is unreachable, so this
+          # waits for the process to listen and then asserts the body separately.
+          ./.github/scripts/wait-for-http.sh http://127.0.0.1:9000/api/health 60 \
+            || { echo "--- bff.log ---"; cat "$RUNNER_TEMP/bff.log"; exit 1; }
+          echo "--- health ---"
+          curl -sS http://127.0.0.1:9000/api/health
+          echo
+          curl -sS http://127.0.0.1:9000/api/health | grep -q '"status":"ok"' \
+            || { echo "BFF is up but cannot reach the COMPLY API"; exit 1; }
 
       # Playwright's webServer block starts the Angular dev server itself.
       - name: Run the browser suite
