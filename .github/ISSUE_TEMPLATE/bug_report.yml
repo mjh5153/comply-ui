@@ -1,0 +1,66 @@
+name: Bug report
+description: Report reproducible incorrect behavior in Comply UI
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve Comply UI. Do not include secrets or sensitive customer data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the incorrect behavior and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start...
+        2. Navigate...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include browser, operating system, Node version, branch or commit, and relevant service versions.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Add sanitized logs, trace details, screenshots, or failing test output. Traces and screenshots can contain entered or rendered data; inspect them before uploading.
+  - type: textarea
+    id: request_path
+    attributes:
+      label: Request path and affected boundary
+      description: If applicable, identify whether the failure is in the browser, Angular app, BFF, or upstream API.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+  - type: checkboxes
+    id: sensitive_data
+    attributes:
+      label: Data-safety confirmation
+      options:
+        - label: I removed secrets, credentials, and sensitive customer data from this report.
+          required: true
