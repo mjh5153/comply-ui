@@ -84,26 +84,20 @@ test('Angular 22 zoneless: real browser round trip through BFF to Spring and bac
     await expect(page.getByRole('link', {name: 'Companies'})).toBeVisible();
 
     // ---------------------------------------------------------------------
-    // 2. Backend-derived data renders (Angular -> BFF -> Spring -> DOM)
+    // 2. The list endpoint is reachable through the BFF.
     //
-    // Read the truth from the API through the same BFF, then require the DOM
-    // to agree. This fails if Angular receives data but never renders it.
+    // Deliberately NOT asserting that rows already exist. CI runs against a
+    // fresh in-memory H2 with zero companies, and a test that needs
+    // pre-existing data passes or fails on the environment rather than on the
+    // application. The row this test creates below is the backend-derived data
+    // it then requires the DOM to render.
     // ---------------------------------------------------------------------
     const listResponse = await page.request.get('http://localhost:9000/api/companies');
     expect(listResponse.ok()).toBeTruthy();
-    const existing: Array<{id: number, name: string}> = await listResponse.json();
-    expect(existing.length).toBeGreaterThan(0);
-
-    for (const company of existing) {
-        await expect(
-            page.getByRole('heading', {name: company.name, level: 3}).first()
-        ).toBeVisible();
-    }
 
     // ---------------------------------------------------------------------
     // 3. Create a company through the browser form.
     //    Proves: reactive form input -> POST -> Spring persists -> list re-renders.
-    //    A brand new row also isolates the rest of the test from existing data.
     // ---------------------------------------------------------------------
     // The Spring entity declares @Column(email, unique = true), so a fixed
     // address collides on the second run. Both fields must be unique per run.
@@ -118,6 +112,19 @@ test('Angular 22 zoneless: real browser round trip through BFF to Spring and bac
     // not because of optimistic local state.
     const newCard = page.getByRole('heading', {name: unique, level: 3});
     await expect(newCard).toBeVisible();
+
+    // Now hold the DOM to the backend's own answer: every company the API
+    // reports must be on screen. This works on an empty database and a full
+    // one, and still fails if Angular receives rows it never renders.
+    const afterCreate = await page.request.get('http://localhost:9000/api/companies');
+    const companies: Array<{id: number, name: string}> = await afterCreate.json();
+    expect(companies.some(c => c.name === unique)).toBeTruthy();
+
+    for (const company of companies) {
+        await expect(
+            page.getByRole('heading', {name: company.name, level: 3}).first()
+        ).toBeVisible();
+    }
 
     // ---------------------------------------------------------------------
     // 4. Navigate to the detail view for the company we just created
