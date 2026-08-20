@@ -19,6 +19,13 @@ export default defineConfig({
     workers: 1,
     reporter: [['list']],
 
+    // 10s rather than the 5s default. The dev server compiles lazy route
+    // chunks on demand, so the first navigation to a lazy route can legitimately
+    // take several seconds on a cold start - which CI always is. This tolerates
+    // compile latency; it does not mask a stale DOM, because a DOM that never
+    // updates still never satisfies the assertion.
+    expect: {timeout: 10_000},
+
     use: {
         baseURL: 'http://localhost:4200',
         trace: 'retain-on-failure',
