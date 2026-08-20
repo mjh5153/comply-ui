@@ -50,3 +50,6 @@ Thumbs.db
 /test-results/
 /playwright-report/
 /blob-report/
+
+# compiled BFF
+/dist-server

@@ -19,12 +19,32 @@ services:
     name: comply-ui
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    region: oregon
+    branch: main
+
+    # Deploys are triggered by the CI workflow's deploy hook, and only after
+    # the unit, BFF and browser suites pass. Leaving Render's own auto-deploy
+    # on would ship every push regardless of whether the tests went green.
+    autoDeploy: false
+
+    # --include=dev is required: NODE_ENV=production below would otherwise make
+    # npm ci drop the devDependencies, and @angular/cli and typescript live
+    # there. Without it the build fails before it starts.
+    buildCommand: npm ci --include=dev && npm run build -- --configuration production && npm run build:server
+
+    # Runs compiled JavaScript. The BFF is not started through ts-node in
+    # production, so no TypeScript toolchain is needed at runtime.
     startCommand: npm run start:prod
+
     healthCheckPath: /api/health
+
     envVars:
       - key: NODE_ENV
         value: production
+
+      # Must satisfy Angular 22's requirement (^22.22.3 || ^24.15.0 || >=26).
+      - key: NODE_VERSION
+        value: "24"
 
       # Set to the Spring Boot service's URL. If comply-api is deployed in
       # this same Render account you can wire it automatically instead:
@@ -38,8 +58,11 @@ services:
       - key: COMPLY_API_BASE_URL
         sync: false
 
+      # Render's free tier spins a service down when idle, so the first request
+      # after a quiet period pays a cold start. This is the ceiling before the
+      # BFF gives up and answers 504.
       - key: COMPLY_API_TIMEOUT_MS
-        value: "15000"
+        value: "30000"
 
       # Only needed if the UI is ever split onto its own static origin.
       # Left unset, the BFF serves the UI and requests are same-origin.
@@ -49,3 +72,8 @@ services:
       # Recommended before exposing the BFF publicly - see .env.example.
       - key: COMPLY_EXTERNAL_API_ALLOWLIST
         sync: false
+
+      # fixture is the only working value today: the Spring service exposes no
+      # compliance endpoints. Responses are labelled provenance.mode=fixture.
+      - key: COMPLY_ENGINE_MODE
+        value: fixture
