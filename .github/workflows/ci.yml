@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A newer push supersedes an in-flight run on the same ref, except on main,
+# where every commit that could deploy is allowed to finish.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+
+  verify:
+    name: Typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck the BFF
+        run: npm run typecheck:bff
+
+      - name: BFF tests
+        run: npm run test:bff
+
+      - name: Angular unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build -- --configuration production
+
+      - name: Compile the BFF
+        run: npm run build:server
+
+  e2e:
+    name: Browser round trip (Angular -> BFF -> Spring)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The E2E suite deliberately mocks nothing, so the real Spring service
+      # has to exist. comply-api-blueprint is public, so no token is needed.
+      - name: Check out the COMPLY API
+        uses: actions/checkout@v4
+        with:
+          repository: mjh5153/comply-api-blueprint
+          path: comply-api
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      - name: Build the COMPLY API
+        working-directory: comply-api
+        run: mvn -B -q -DskipTests package
+
+      - name: Start the COMPLY API on :8080
+        run: |
+          nohup java -jar comply-api/target/*.jar > "$RUNNER_TEMP/spring.log" 2>&1 &
+          echo "waiting for Spring on :8080"
+          for i in $(seq 1 60); do
+            if curl -sf --max-time 2 http://localhost:8080/companies > /dev/null; then
+              echo "Spring is up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Spring did not start within 60s"; cat "$RUNNER_TEMP/spring.log"; exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the BFF on :9000
+        run: |
+          nohup npm run server > "$RUNNER_TEMP/bff.log" 2>&1 &
+          echo "waiting for the BFF on :9000"
+          for i in $(seq 1 60); do
+            if curl -sf --max-time 2 http://localhost:9000/api/health > /dev/null; then
+              echo "BFF is up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "BFF did not start within 60s"; cat "$RUNNER_TEMP/bff.log"; exit 1
+
+      # Playwright's webServer block starts the Angular dev server itself.
+      - name: Run the browser suite
+        run: npm run e2e
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload service logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-logs
+          path: ${{ runner.temp }}/*.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: [verify, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger the Render deploy hook
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::notice::RENDER_DEPLOY_HOOK_URL is not set - skipping deploy."
+            echo "Create the Render service, then add the secret to enable deploys."
+            exit 0
+          fi
+          echo "Tests passed; triggering Render deploy"
+          code=$(curl -sS -o "$RUNNER_TEMP/render.json" -w '%{http_code}' -X POST "$HOOK")
+          cat "$RUNNER_TEMP/render.json"; echo
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "Render returned HTTP $code"; exit 1
+          fi
+          echo "Deploy triggered."
