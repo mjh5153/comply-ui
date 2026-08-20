@@ -133,8 +133,10 @@ Returns `503` with `"status": "degraded"` when the upstream is unreachable.
 ## Compliance engine - served by the BFF
 
 These do **not** reach Spring. They are produced by the engine in
-`server/compliance/`. Each route confirms the company exists upstream before
-evaluating anything for it, so the two halves cannot drift apart.
+`server/compliance/`. The four company-scoped profile and evaluation operations
+confirm the company exists upstream. The rule catalogue is not company-scoped;
+the explanation operation accepts a company id but does not currently validate
+that company upstream.
 
 | Method | BFF route | Returns |
 | --- | --- | --- |
@@ -155,9 +157,11 @@ evaluating anything for it, so the two halves cannot drift apart.
 
 ### Provenance is structural, not cosmetic
 
-Three sources appear in the UI and must never blur together. Every object
-carries its own `provenance` block rather than relying on an envelope, because
-an envelope's provenance is lost the moment a component destructures it.
+The provenance contract reserves three sources that must never blur together.
+The current UI emits engine findings and AI explanations; `analyst` is reserved
+for human decisions when that workflow is implemented. Every object carries
+its own `provenance` block rather than relying on an envelope, because an
+envelope's provenance is lost the moment a component destructures it.
 
 | `source` | Meaning |
 | --- | --- |

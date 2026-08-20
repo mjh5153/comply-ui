@@ -15,8 +15,9 @@ import {ProcessingProfile, Finding} from './compliance/types';
  * /companies/{id}/evaluate answers 404). Every response is labelled
  * provenance.mode = 'fixture' so the UI can say so plainly.
  *
- * The company itself is still authoritative: each route confirms the company
- * exists in Spring before evaluating anything for it.
+ * Company-scoped profile and evaluation handlers confirm that the company
+ * exists in Spring. The catalogue is global, and the explanation handler does
+ * not currently perform that upstream existence check.
  */
 
 function readId(req: Request, res: Response): number | null {
