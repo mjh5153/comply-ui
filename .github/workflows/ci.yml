@@ -5,9 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Lets the full pipeline - including the deploy gate - be re-run by hand
+  # without inventing a commit. Useful when a deploy needs repeating or an
+  # upstream service was the thing that changed.
+  workflow_dispatch:
 
-# A newer push supersedes an in-flight run on the same ref, except on main,
-# where every commit that could deploy is allowed to finish.
+# A newer push does not cancel the currently running main workflow. GitHub keeps
+# at most one additional pending run for the same group, so a newer queued push
+# can replace an older pending one even when cancel-in-progress is false.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
@@ -132,7 +137,9 @@ jobs:
     name: Deploy to Render
     runs-on: ubuntu-latest
     needs: [verify, e2e]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Trigger the Render deploy hook
         env:
