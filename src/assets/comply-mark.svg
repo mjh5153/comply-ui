@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Comply</title>
+  <desc>A white C in a navy policy shield, representing compliance and trust.</desc>
+  <path fill="#1a3a5c" d="M32 2 58 12v19c0 14-10 24-26 31C16 55 6 45 6 31V12Z"/>
+  <path fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"
+    d="M41 22a14 14 0 1 0 0 20"/>
+</svg>
